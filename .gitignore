@@ -25,3 +25,4 @@ replay_pid*
 target/
 __pycache__/
 analysis/results/
+.DS_Store
