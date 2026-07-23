@@ -8,7 +8,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
-import org.iram.omega.iram_omega_q.simulation.ConsciousSimulation;
+import org.iram.omega.iram_omega_q.simulation.RegulationSimulation;
 import org.iram.omega.iram_omega_q.simulation.SimulationParameters;
 import org.iram.omega.iram_omega_q.simulation.Util;
 
@@ -155,15 +155,15 @@ public class MuCStability {
                     p.emotionalNoise = etaFixed;
                     p.muInit = muGrid[i];
 
-                    // Deterministic seed mixing consistent with your sweep conventions.
+                    // Deterministic seed mixing consistent with sweep conventions.
                     p.seed = Util.mixSeed(
                             p.baseSeed,
-                            i,                  // μ index
-                            0,                  // noise index fixed -> 0 in this 1D slice
+                            i,                 // μ index
+                            0,                 // noise index fixed -> 0 in this 1D slice
                             r                  // run index
                     );
 
-                    ConsciousSimulation.SimulationResult res = ConsciousSimulation.run(p);
+                    RegulationSimulation.SimulationResult res = RegulationSimulation.run(p);
 
                     int steps = res.coherence.size();
 

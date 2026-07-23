@@ -7,7 +7,7 @@ package org.iram.omega.iram_omega_q.simulation;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
-import org.iram.omega.iram_omega_q.simulation.ConsciousSimulation.SimulationResult;
+import org.iram.omega.iram_omega_q.simulation.RegulationSimulation.SimulationResult;
 
 /**
  *
@@ -22,7 +22,7 @@ public class AveragingRunner {
         List<SimulationResult> all = new ArrayList<>();
 
         for (int i = 0; i < runs; i++) {
-            all.add(ConsciousSimulation.run(params));
+            all.add(RegulationSimulation.run(params));
         }
 
         return average(all);

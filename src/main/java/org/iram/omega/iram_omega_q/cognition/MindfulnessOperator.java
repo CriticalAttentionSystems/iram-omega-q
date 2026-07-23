@@ -9,7 +9,7 @@ package org.iram.omega.iram_omega_q.cognition;
  * @author veronique
  */
 /**
- * Utility class that applies a simple regulatory stabilization
+ * Utility class that applies a simple mindfulness-style stabilization
  * operation to a quantum-like cognitive state.
  *
  * This operator models the idea of gently strengthening
@@ -34,10 +34,10 @@ package org.iram.omega.iram_omega_q.cognition;
  *     reduces the influence of non-breath-related states and renormalizes the
  *     cognitive state around the remaining focus.
  *
- * This is a modeling abstraction. It is not claiming that regulation literally
+ * This is a modeling abstraction. It is not claiming that mindfulness literally
  * performs this exact mathematical operation in the brain.
  */
-public class RegulationOperator {
+public class MindfulnessOperator {
 
     /**
      * Stabilizes the cognitive state around a selected focus index.

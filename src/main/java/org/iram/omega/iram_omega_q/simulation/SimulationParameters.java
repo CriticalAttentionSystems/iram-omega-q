@@ -4,7 +4,7 @@
  */
 package org.iram.omega.iram_omega_q.simulation;
 
-import org.iram.omega.iram_omega_q.cognition.QuantumConsciousAgent;
+import org.iram.omega.iram_omega_q.cognition.QuantumRegulationAgent;
 
 /**
  *
@@ -12,6 +12,23 @@ import org.iram.omega.iram_omega_q.cognition.QuantumConsciousAgent;
  */
 public class SimulationParameters {
 
+    public enum NoiseModelType {
+        EXTERNAL,
+        SELF_GENERATED,
+        INDUCED,
+        EXTERNAL_PLUS_SELF,
+        EXTERNAL_PLUS_INDUCED,
+        SELF_PLUS_INDUCED,
+        MIXED
+    }
+
+    public NoiseModelType noiseModelType = NoiseModelType.EXTERNAL;
+
+    public double selfNoiseRho = 0.98;
+    public double selfNoiseSigma = 0.0;
+    public double inducedNoiseAlpha = 0.0;
+    public long noiseSeedOffset = 7919L;
+    
     public enum ScheduleType {
         NONE,
         LINEAR,
@@ -39,7 +56,7 @@ public class SimulationParameters {
     public double phaseNoise = 0.2;
 
     /**
-     * Basis-state index stabilized by the regulation operator.
+     * Basis-state index stabilized by the mindfulness operator.
      *
      * This is explicit so that time-series runs and phase sweeps apply the
      * same attentional focus.  Previously the two paths used indices 6 and 0.
@@ -51,7 +68,7 @@ public class SimulationParameters {
     public double coupling = 0.08;
     public double locality = 2.0;
 
-    // noise + regulation
+    // emotion + mindfulness
     public double emotionalNoise = 0.805;
     public double muInit = 0.25;
     public double muDerivativeGain = 5e-4;  // alpha0
@@ -59,8 +76,31 @@ public class SimulationParameters {
     public double targetEntropy = 0.3;
 
     // control
-    public QuantumConsciousAgent.ControlOrdering ordering =
-            QuantumConsciousAgent.ControlOrdering.DISTURBANCE_FIRST;
+    public QuantumRegulationAgent.ControlOrdering ordering =
+            QuantumRegulationAgent.ControlOrdering.DISTURBANCE_FIRST;
+
+    /**
+     * Time-dependent control-ordering protocol.  FIXED reproduces the existing
+     * RF-versus-DF experiments exactly.
+     */
+    public OrderingSchedule.Protocol switchingProtocol =
+            OrderingSchedule.Protocol.FIXED;
+
+    /** Number of integration steps per RF or DF block in PERIODIC mode. */
+    public int periodicDwellSteps = 100;
+
+    /** Markov transition probability P(RF -> DF) per integration step. */
+    public double pLoss = 0.02;
+
+    /** Markov transition probability P(DF -> RF) per integration step. */
+    public double pReturn = 0.02;
+
+    /**
+     * Independent seed for ordering switching.  Long.MIN_VALUE means derive a
+     * deterministic switching seed from the run seed.  It is kept separate
+     * from the disturbance RNG to preserve paired noise histories.
+     */
+    public long switchingSeed = Long.MIN_VALUE;
 
     public double muMin = 1e-3;
     public double muMax = 1.0;
@@ -121,7 +161,7 @@ public class SimulationParameters {
         p.coupling = this.coupling;
         p.locality = this.locality;
 
-        // noise + regulation
+        // emotion + mindfulness
         p.emotionalNoise = this.emotionalNoise;
         p.muInit = this.muInit;
         p.muTargetGain = this.muTargetGain;
@@ -130,6 +170,11 @@ public class SimulationParameters {
 
         // control
         p.ordering = this.ordering;
+        p.switchingProtocol = this.switchingProtocol;
+        p.periodicDwellSteps = this.periodicDwellSteps;
+        p.pLoss = this.pLoss;
+        p.pReturn = this.pReturn;
+        p.switchingSeed = this.switchingSeed;
         p.muMin = this.muMin;
         p.muMax = this.muMax;
 
@@ -160,6 +205,12 @@ public class SimulationParameters {
 
         p.experimentTag = this.experimentTag;
 
+        p.noiseModelType = this.noiseModelType;
+        p.selfNoiseRho = this.selfNoiseRho;
+        p.selfNoiseSigma = this.selfNoiseSigma;
+        p.inducedNoiseAlpha = this.inducedNoiseAlpha;
+        p.noiseSeedOffset = this.noiseSeedOffset;
+        
         return p;
     }
 }

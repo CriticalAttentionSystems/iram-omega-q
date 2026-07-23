@@ -7,8 +7,8 @@ package org.iram.omega.iram_omega_q.simulation;
 import java.util.Random;
 import org.iram.omega.iram_omega_q.cognition.Hamiltonian;
 import org.iram.omega.iram_omega_q.cognition.QuantumCognitiveState;
-import org.iram.omega.iram_omega_q.cognition.QuantumConsciousAgent;
-import org.iram.omega.iram_omega_q.cognition.QuantumConsciousAgent.ControlOrdering;
+import org.iram.omega.iram_omega_q.cognition.QuantumRegulationAgent;
+import org.iram.omega.iram_omega_q.cognition.QuantumRegulationAgent.ControlOrdering;
 import org.iram.omega.iram_omega_q.cognition.quantum.CognitiveState;
 import org.iram.omega.iram_omega_q.cognition.quantum.CognitiveStateMetrics;
 import org.iram.omega.iram_omega_q.control.MuController;
@@ -62,11 +62,11 @@ public class SimulationMain {
             );
 
         // --- Conscious agent ---
-        QuantumConsciousAgent agent =
-            new QuantumConsciousAgent(psi, H, muController, rng);
+        QuantumRegulationAgent agent =
+            new QuantumRegulationAgent(psi, H, muController, rng);
 
         agent.setEmotionalNoise(0.02);
-        agent.setRegulationFocus(0);   
+        agent.setMindfulnessFocus(0);   
         agent.setControlOrdering(ControlOrdering.REGULATION_FIRST);
         
         // --- Simulation loop ---
@@ -84,7 +84,7 @@ public class SimulationMain {
                 CognitiveStateMetrics.coherenceGap(rho);
 
             double mu =
-                agent.regulationLevel();
+                agent.mindfulnessLevel();
 
             if (t % 500 == 0) {
                 System.out.printf(

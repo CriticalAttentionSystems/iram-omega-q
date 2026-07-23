@@ -8,11 +8,11 @@ package org.iram.omega.iram_omega_q.cognition.quantum;
  *
  * @author veronique
  */
-public class AwarenessObservable {
+public class StateObservable {
 
     private final double[] projector; // GWT-like workspace projection
 
-    public AwarenessObservable(int dim) {
+    public StateObservable(int dim) {
         projector = new double[dim];
         for (int i = 0; i < dim / 3; i++) {
             projector[i] = 1.0; // workspace subspace

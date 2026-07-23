@@ -18,7 +18,7 @@ public final class SettlingAnalyzer {
      * Returns -1 if no settling is detected.
      */
     public static int detectSettlingIndex(
-            ConsciousSimulation.SimulationResult r,
+            RegulationSimulation.SimulationResult r,
             double eps,
             int window
     ) {
@@ -50,7 +50,7 @@ public final class SettlingAnalyzer {
      * Returns the settling time using r.time if available, else NaN.
      */
     public static double detectSettlingTime(
-            ConsciousSimulation.SimulationResult r,
+            RegulationSimulation.SimulationResult r,
             double eps,
             int window
     ) {
@@ -66,7 +66,7 @@ public final class SettlingAnalyzer {
      * Useful as a softer companion metric.
      */
     public static double settledFraction(
-            ConsciousSimulation.SimulationResult r,
+            RegulationSimulation.SimulationResult r,
             double eps
     ) {
         if (r == null || r.deltaMu == null || r.deltaMu.isEmpty()) {

@@ -67,7 +67,7 @@ public final class DwellTimeAnalyzer {
     * @return one regime label for each recorded coherence-gap sample
     */
     public static List<Integer> labelRegimes(
-            ConsciousSimulation.SimulationResult r,
+            RegulationSimulation.SimulationResult r,
             double lowThreshold,
             double highThreshold
     ) {
@@ -140,7 +140,7 @@ public final class DwellTimeAnalyzer {
     * @return sample counts for all observed dwells in the target regime
     */
     public static List<Double> computeDwellTimes(
-        ConsciousSimulation.SimulationResult r,
+        RegulationSimulation.SimulationResult r,
         List<Integer> labels,
         int targetLabel
     ) {
@@ -199,7 +199,7 @@ public final class DwellTimeAnalyzer {
     * @return number of observed regime changes per unit simulation time
     */
     public static double transitionRate(
-            ConsciousSimulation.SimulationResult r,
+            RegulationSimulation.SimulationResult r,
             List<Integer> labels
     ) {
         if (r == null || r.time == null || labels == null || labels.size() < 2) {

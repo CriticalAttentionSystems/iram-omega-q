@@ -32,7 +32,7 @@ from typing import Iterable
 import matplotlib.pyplot as plt
 import numpy as np
 
-ROOT = Path(__file__).resolve().parents[1] / "results" / "paper2"
+ROOT = Path(__file__).resolve().parents[2] / "results" / "paper2"
 FIG = ROOT / "figures"
 SUMMARY = ROOT / "summary"
 FIG.mkdir(parents=True, exist_ok=True)

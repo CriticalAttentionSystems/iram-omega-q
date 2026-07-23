@@ -4,7 +4,7 @@
  */
 package org.iram.omega.iram_omega_q.simulation;
 
-import org.iram.omega.iram_omega_q.cognition.QuantumConsciousAgent;
+import org.iram.omega.iram_omega_q.cognition.QuantumRegulationAgent;
 
 /**
  *
@@ -20,7 +20,7 @@ public class SeedRobustRunner {
                 double[] muGrid,
                 int burnIn,
                 int runsPerPoint,
-                QuantumConsciousAgent.ControlOrdering ordering,
+                QuantumRegulationAgent.ControlOrdering ordering,
                 long seed0,
                 int nSeeds
         ) {

@@ -25,7 +25,7 @@ package org.iram.omega.iram_omega_q.control;
  *
  * <p>Role in this project:</p>
  * <ul>
- *   <li>mu is the model's adaptive regulation gain</li>
+ *   <li>mu is the model's mindfulness-like regulation gain</li>
  *   <li>higher mu means stronger regulation / disturbance suppression</li>
  *   <li>lower mu means weaker regulation / greater exposure to disturbance</li>
  * </ul>

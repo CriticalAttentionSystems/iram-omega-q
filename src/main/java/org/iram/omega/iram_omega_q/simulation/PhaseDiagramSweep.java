@@ -178,8 +178,8 @@ public class PhaseDiagramSweep {
                     r
             );
 
-            ConsciousSimulation.SweepStatistics statistics =
-                    ConsciousSimulation.runSweepStatistics(p, burnIn);
+            RegulationSimulation.SweepStatistics statistics =
+                    RegulationSimulation.runSweepStatistics(p, burnIn);
 
             if (Double.isFinite(statistics.meanCoherence) &&
                     Double.isFinite(statistics.temporalVariance)) {

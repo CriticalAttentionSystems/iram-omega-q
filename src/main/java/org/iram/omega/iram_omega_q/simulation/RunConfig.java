@@ -8,7 +8,7 @@ import java.io.*;
 import java.nio.file.*;
 import java.util.Objects;
 import java.util.Properties;
-import org.iram.omega.iram_omega_q.cognition.QuantumConsciousAgent;
+import org.iram.omega.iram_omega_q.cognition.QuantumRegulationAgent;
 
 /**
  *
@@ -25,7 +25,8 @@ public class RunConfig {
         TARGET_ENTROPY_SWEEP,
         DWELL_TIME,
         AMNESIA,
-        PERTURBATION
+        PERTURBATION,
+        SWITCHING_STUDY
     }
 
     // ===== core sim knobs =====
@@ -39,7 +40,7 @@ public class RunConfig {
     public long seed = 12345L;
     public long baseSeed = 123456789L;
 
-    // Must match QuantumConsciousAgent.ControlOrdering enum constant name
+    // Must match QuantumRegulationAgent.ControlOrdering enum constant name
     public String ordering = "REGULATION_FIRST";
 
     // ===== optional low-level sim knobs =====
@@ -80,6 +81,25 @@ public class RunConfig {
 
     // ===== experiment controls =====
 
+    // RF/DF switching for single runs and the SWITCHING_STUDY mode
+    public OrderingSchedule.Protocol switchingProtocol = OrderingSchedule.Protocol.FIXED;
+    public int periodicDwellSteps = 100;
+    public double pLoss = 0.02;
+    public double pReturn = 0.02;
+    public long switchingSeed = Long.MIN_VALUE;
+
+    // Switching-study grid and statistics controls
+    public int switchingRuns = 30;
+    public int switchingBurnInSamples = 2000;
+    public long switchingBaseSeed = 827364918273L;
+    public String periodicDwellGrid = "1,10,50,100,500";
+    public String markovPairGrid =
+            "0.01:0.01,0.02:0.02,0.05:0.05,0.10:0.10,0.20:0.20,0.10:0.02,0.02:0.10";
+
+    // Compact Paper 3 follow-up diagnostics; no full all-replicate time-series export.
+    public int switchingDiagnosticMaxLagSteps = 2000;
+    public int switchingDiagnosticStrideSteps = 10;
+
     // settling detector
     public double settleEps = 1e-4;
     public int settleWindow = 200;
@@ -112,6 +132,34 @@ public class RunConfig {
     public boolean sweepUp = true;
     public boolean sweepDown = true;
 
+    // ===== Paper 4 noise-source controls =====
+    //
+    // Default EXTERNAL preserves Papers 1--3 behavior.
+    // Other values enable self-generated and/or regulation-induced disturbance.
+    public SimulationParameters.NoiseModelType noiseModelType =
+            SimulationParameters.NoiseModelType.EXTERNAL;
+
+    /*
+     * Self-generated internal noise:
+     *
+     *     zeta(t+1) = rho * zeta(t) + sigmaIn * epsilon(t)
+     */
+    public double selfNoiseRho = 0.98;
+    public double selfNoiseSigma = 0.0;
+
+    /*
+     * Regulation-induced tightening noise:
+     *
+     *     eta_induced(t) = alpha * max(0, mu(t)-mu(t-1))^2
+     */
+    public double inducedNoiseAlpha = 0.0;
+
+    /*
+     * Offset used to seed stateful noise models independently from the main
+     * agent RNG.
+     */
+    public long noiseSeedOffset = 7919L;
+
     // metadata
     public String experimentTag = "baseline";
 
@@ -121,7 +169,7 @@ public class RunConfig {
 
     // ===== threads =====
     public int threads = Math.max(1, Runtime.getRuntime().availableProcessors() - 1);
-    
+
     public static RunConfig load(Path path) throws IOException {
         Objects.requireNonNull(path, "path");
         Properties p = new Properties();
@@ -163,7 +211,7 @@ public class RunConfig {
         c.fast = getBoolean(p, "fast", c.fast);
 
         c.threads = getInt(p, "threads", c.threads);
-        
+
         c.muGrid = p.getProperty("muGrid", c.muGrid).trim();
         c.noiseGrid = p.getProperty("noiseGrid", c.noiseGrid).trim();
 
@@ -186,29 +234,75 @@ public class RunConfig {
         c.interventionStart = getInt(p, "interventionStart", c.interventionStart);
         c.interventionEnd = getInt(p, "interventionEnd", c.interventionEnd);
         c.muLearningScaleDuringIntervention =
-                getDouble(p, "muLearningScaleDuringIntervention", c.muLearningScaleDuringIntervention);
+                getDouble(p, "muLearningScaleDuringIntervention",
+                        c.muLearningScaleDuringIntervention);
         c.noiseMultiplierDuringIntervention =
-                getDouble(p, "noiseMultiplierDuringIntervention", c.noiseMultiplierDuringIntervention);
+                getDouble(p, "noiseMultiplierDuringIntervention",
+                        c.noiseMultiplierDuringIntervention);
         c.targetEntropyDuringIntervention =
-                getDoubleNullable(p, "targetEntropyDuringIntervention", c.targetEntropyDuringIntervention);
+                getDoubleNullable(p, "targetEntropyDuringIntervention",
+                        c.targetEntropyDuringIntervention);
 
         c.resetStateAtStep = getInt(p, "resetStateAtStep", c.resetStateAtStep);
         c.resetMuAtStep = getInt(p, "resetMuAtStep", c.resetMuAtStep);
         c.keepControllerHistoryOnReset =
-                getBoolean(p, "keepControllerHistoryOnReset", c.keepControllerHistoryOnReset);
+                getBoolean(p, "keepControllerHistoryOnReset",
+                        c.keepControllerHistoryOnReset);
         c.resetToInitialState =
                 getBoolean(p, "resetToInitialState", c.resetToInitialState);
 
         c.targetEntropyStart = getDouble(p, "targetEntropyStart", c.targetEntropyStart);
         c.targetEntropyEnd = getDouble(p, "targetEntropyEnd", c.targetEntropyEnd);
         c.targetEntropySchedule =
-                getEnum(p, "targetEntropySchedule", c.targetEntropySchedule, SimulationParameters.ScheduleType.class);
+                getEnum(p, "targetEntropySchedule", c.targetEntropySchedule,
+                        SimulationParameters.ScheduleType.class);
 
         c.focusThresholdLow = getDouble(p, "focusThresholdLow", c.focusThresholdLow);
         c.focusThresholdHigh = getDouble(p, "focusThresholdHigh", c.focusThresholdHigh);
 
         c.sweepUp = getBoolean(p, "sweepUp", c.sweepUp);
         c.sweepDown = getBoolean(p, "sweepDown", c.sweepDown);
+
+        c.switchingProtocol =
+                getEnum(p, "switchingProtocol", c.switchingProtocol,
+                        OrderingSchedule.Protocol.class);
+        c.periodicDwellSteps =
+                getInt(p, "periodicDwellSteps", c.periodicDwellSteps);
+        c.pLoss = getDouble(p, "pLoss", c.pLoss);
+        c.pReturn = getDouble(p, "pReturn", c.pReturn);
+        c.switchingSeed = getLong(p, "switchingSeed", c.switchingSeed);
+        c.switchingRuns = getInt(p, "switchingRuns", c.switchingRuns);
+        c.switchingBurnInSamples =
+                getInt(p, "switchingBurnInSamples", c.switchingBurnInSamples);
+        c.switchingBaseSeed =
+                getLong(p, "switchingBaseSeed", c.switchingBaseSeed);
+        c.periodicDwellGrid =
+                p.getProperty("periodicDwellGrid", c.periodicDwellGrid).trim();
+        c.markovPairGrid =
+                p.getProperty("markovPairGrid", c.markovPairGrid).trim();
+        c.switchingDiagnosticMaxLagSteps =
+                getInt(p, "switchingDiagnosticMaxLagSteps",
+                        c.switchingDiagnosticMaxLagSteps);
+        c.switchingDiagnosticStrideSteps =
+                getInt(p, "switchingDiagnosticStrideSteps",
+                        c.switchingDiagnosticStrideSteps);
+
+        // ===== Paper 4 noise-source controls =====
+        c.noiseModelType =
+                getEnum(p, "noiseModelType", c.noiseModelType,
+                        SimulationParameters.NoiseModelType.class);
+
+        c.selfNoiseRho =
+                getDouble(p, "selfNoiseRho", c.selfNoiseRho);
+
+        c.selfNoiseSigma =
+                getDouble(p, "selfNoiseSigma", c.selfNoiseSigma);
+
+        c.inducedNoiseAlpha =
+                getDouble(p, "inducedNoiseAlpha", c.inducedNoiseAlpha);
+
+        c.noiseSeedOffset =
+                getLong(p, "noiseSeedOffset", c.noiseSeedOffset);
 
         c.experimentTag = p.getProperty("experimentTag", c.experimentTag).trim();
 
@@ -221,7 +315,9 @@ public class RunConfig {
     public void save(Path path) throws IOException {
         Objects.requireNonNull(path, "path");
         Path parent = path.toAbsolutePath().getParent();
-        if (parent != null) Files.createDirectories(parent);
+        if (parent != null) {
+            Files.createDirectories(parent);
+        }
 
         Properties p = new Properties();
 
@@ -256,6 +352,8 @@ public class RunConfig {
         p.setProperty("mode", mode.name());
         p.setProperty("fast", Boolean.toString(fast));
 
+        p.setProperty("threads", Integer.toString(threads));
+
         p.setProperty("muGrid", muGrid);
         p.setProperty("noiseGrid", noiseGrid);
 
@@ -264,6 +362,22 @@ public class RunConfig {
 
         p.setProperty("avgRuns", Integer.toString(avgRuns));
         p.setProperty("avgBurnInSamples", Integer.toString(avgBurnInSamples));
+
+        p.setProperty("switchingProtocol", switchingProtocol.name());
+        p.setProperty("periodicDwellSteps", Integer.toString(periodicDwellSteps));
+        p.setProperty("pLoss", Double.toString(pLoss));
+        p.setProperty("pReturn", Double.toString(pReturn));
+        p.setProperty("switchingSeed", Long.toString(switchingSeed));
+        p.setProperty("switchingRuns", Integer.toString(switchingRuns));
+        p.setProperty("switchingBurnInSamples",
+                Integer.toString(switchingBurnInSamples));
+        p.setProperty("switchingBaseSeed", Long.toString(switchingBaseSeed));
+        p.setProperty("periodicDwellGrid", periodicDwellGrid);
+        p.setProperty("markovPairGrid", markovPairGrid);
+        p.setProperty("switchingDiagnosticMaxLagSteps",
+                Integer.toString(switchingDiagnosticMaxLagSteps));
+        p.setProperty("switchingDiagnosticStrideSteps",
+                Integer.toString(switchingDiagnosticStrideSteps));
 
         p.setProperty("settleEps", Double.toString(settleEps));
         p.setProperty("settleWindow", Integer.toString(settleWindow));
@@ -294,6 +408,13 @@ public class RunConfig {
 
         p.setProperty("sweepUp", Boolean.toString(sweepUp));
         p.setProperty("sweepDown", Boolean.toString(sweepDown));
+
+        // Paper 4 noise-source controls
+        p.setProperty("noiseModelType", noiseModelType.name());
+        p.setProperty("selfNoiseRho", Double.toString(selfNoiseRho));
+        p.setProperty("selfNoiseSigma", Double.toString(selfNoiseSigma));
+        p.setProperty("inducedNoiseAlpha", Double.toString(inducedNoiseAlpha));
+        p.setProperty("noiseSeedOffset", Long.toString(noiseSeedOffset));
 
         p.setProperty("experimentTag", experimentTag);
 
@@ -330,7 +451,17 @@ public class RunConfig {
         sp.muDerivativeGain = this.muDerivativeGain;
         sp.targetEntropy = this.targetEntropy;
 
-        sp.ordering = QuantumConsciousAgent.ControlOrdering.valueOf(this.ordering.trim().toUpperCase());
+        sp.ordering =
+                QuantumRegulationAgent.ControlOrdering.valueOf(
+                        this.ordering.trim().toUpperCase()
+                );
+
+        sp.switchingProtocol = this.switchingProtocol;
+        sp.periodicDwellSteps = this.periodicDwellSteps;
+        sp.pLoss = this.pLoss;
+        sp.pReturn = this.pReturn;
+        sp.switchingSeed = this.switchingSeed;
+
         sp.muMin = this.muMin;
         sp.muMax = this.muMax;
 
@@ -339,9 +470,12 @@ public class RunConfig {
 
         sp.interventionStart = this.interventionStart;
         sp.interventionEnd = this.interventionEnd;
-        sp.muLearningScaleDuringIntervention = this.muLearningScaleDuringIntervention;
-        sp.noiseMultiplierDuringIntervention = this.noiseMultiplierDuringIntervention;
-        sp.targetEntropyDuringIntervention = this.targetEntropyDuringIntervention;
+        sp.muLearningScaleDuringIntervention =
+                this.muLearningScaleDuringIntervention;
+        sp.noiseMultiplierDuringIntervention =
+                this.noiseMultiplierDuringIntervention;
+        sp.targetEntropyDuringIntervention =
+                this.targetEntropyDuringIntervention;
 
         sp.resetStateAtStep = this.resetStateAtStep;
         sp.resetMuAtStep = this.resetMuAtStep;
@@ -359,6 +493,13 @@ public class RunConfig {
         sp.sweepDown = this.sweepDown;
 
         sp.experimentTag = this.experimentTag;
+
+        // Paper 4 noise-source controls
+        sp.noiseModelType = this.noiseModelType;
+        sp.selfNoiseRho = this.selfNoiseRho;
+        sp.selfNoiseSigma = this.selfNoiseSigma;
+        sp.inducedNoiseAlpha = this.inducedNoiseAlpha;
+        sp.noiseSeedOffset = this.noiseSeedOffset;
 
         return sp;
     }
@@ -411,12 +552,16 @@ public class RunConfig {
         return Boolean.parseBoolean(v.trim());
     }
 
-    private static <E extends Enum<E>> E getEnum(Properties p, String k, E d, Class<E> type) {
+    private static <E extends Enum<E>> E getEnum(
+            Properties p,
+            String k,
+            E d,
+            Class<E> type
+    ) {
         String v = p.getProperty(k);
         if (v == null || v.trim().isEmpty()) {
             return d;
         }
         return Enum.valueOf(type, v.trim().toUpperCase());
     }
-    
 }

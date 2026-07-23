@@ -7,7 +7,7 @@ import java.util.Random;
 import org.iram.omega.iram_omega_q.cognition.AttentionHamiltonian;
 import org.iram.omega.iram_omega_q.cognition.Hamiltonian;
 import org.iram.omega.iram_omega_q.cognition.QuantumCognitiveState;
-import org.iram.omega.iram_omega_q.cognition.QuantumConsciousAgent;
+import org.iram.omega.iram_omega_q.cognition.QuantumRegulationAgent;
 import org.iram.omega.iram_omega_q.cognition.quantum.CognitiveState;
 import org.iram.omega.iram_omega_q.cognition.quantum.CognitiveStateMetrics;
 import org.iram.omega.iram_omega_q.control.MuController;
@@ -17,13 +17,13 @@ import org.iram.omega.iram_omega_q.control.MuController;
  */
 
 
-public class ConsciousnessExperiment {
+public class RegulationExperiment {
 
     private final int dim;
     private final int steps;
     private final double dt;
     private final Random rng;
-    public ConsciousnessExperiment(int dim, int steps, double dt) {
+    public RegulationExperiment(int dim, int steps, double dt) {
         this.dim = dim;
         this.steps = steps;
         this.dt = dt;
@@ -48,8 +48,8 @@ public class ConsciousnessExperiment {
                 0.5     // target entropy
             );
 
-        QuantumConsciousAgent agent =
-            new QuantumConsciousAgent(
+        QuantumRegulationAgent agent =
+            new QuantumRegulationAgent(
                 psi,
                 H,
                 muController,
@@ -78,7 +78,7 @@ public class ConsciousnessExperiment {
             double coherence =
                 CognitiveStateMetrics.coherenceGap(rho);
 
-            // Adaptive regulation
+            // Adaptive mindfulness
             double mu = muController.update(SvN);
 
             // Log

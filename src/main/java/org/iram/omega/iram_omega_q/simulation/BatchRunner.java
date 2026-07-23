@@ -6,7 +6,7 @@ package org.iram.omega.iram_omega_q.simulation;
 
 import java.util.ArrayList;
 import java.util.List;
-import org.iram.omega.iram_omega_q.simulation.ConsciousSimulation.SimulationResult;
+import org.iram.omega.iram_omega_q.simulation.RegulationSimulation.SimulationResult;
 
 /**
  *
@@ -25,7 +25,7 @@ public class BatchRunner {
             p.targetEntropy = target;
 
             SimulationResult r =
-                ConsciousSimulation.run(p);
+                RegulationSimulation.run(p);
             results.add(r);
         }
         return results;

@@ -5,7 +5,7 @@ import sys
 import numpy as np
 import matplotlib.pyplot as plt
 
-ROOT = Path(__file__).resolve().parents[1] / "results" / "paper1"
+ROOT = Path(__file__).resolve().parents[2] / "results" / "paper1"
 MODE = sys.argv[1].strip().lower() if len(sys.argv) > 1 else "publication"
 SUFFIX = "_phase_quick" if MODE == "quick" else "_phase"
 FIG = ROOT / ("figures_quick" if MODE == "quick" else "figures")

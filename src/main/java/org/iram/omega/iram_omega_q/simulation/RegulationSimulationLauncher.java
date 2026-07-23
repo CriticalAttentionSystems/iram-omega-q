@@ -9,8 +9,8 @@ package org.iram.omega.iram_omega_q.simulation;
  * @author veronique
  */
 
-public class ConsciousSimulationLauncher {
+public class RegulationSimulationLauncher {
     public static void main(String[] args) {
-        ConsciousSimulationApp.main(args);
+        RegulationSimulationApp.main(args);
     }
 }

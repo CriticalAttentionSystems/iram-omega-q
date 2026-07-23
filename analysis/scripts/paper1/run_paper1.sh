@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # Run from the Maven/NetBeans project root.
-PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 cd "$PROJECT_ROOT"
 
 MODE="${1:-publication}"
@@ -45,11 +45,11 @@ run_cfg analysis/paper1/config/paper1_df_averaged.properties
 if [[ "$MODE" == "quick" ]]; then
   run_cfg analysis/paper1/config/paper1_rf_phase_quick.properties
   run_cfg analysis/paper1/config/paper1_df_phase_quick.properties
-  plot_with_python analysis/scripts/plot_paper1.py quick
+  plot_with_python analysis/scripts/paper1/plot_paper1.py quick
 else
   run_cfg analysis/paper1/config/paper1_rf_phase.properties
   run_cfg analysis/paper1/config/paper1_df_phase.properties
-  plot_with_python analysis/scripts/plot_paper1.py publication
+  plot_with_python analysis/scripts/paper1/plot_paper1.py publication
 fi
 
 echo "Paper 1 analysis complete. Results are under analysis/results/paper1."

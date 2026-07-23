@@ -4,8 +4,8 @@
  */
 package org.iram.omega.iram_omega_q.simulation;
 
-import org.iram.omega.iram_omega_q.cognition.QuantumConsciousAgent;
-import org.iram.omega.iram_omega_q.simulation.ConsciousSimulation.SimulationResult;
+import org.iram.omega.iram_omega_q.cognition.QuantumRegulationAgent;
+import org.iram.omega.iram_omega_q.simulation.RegulationSimulation.SimulationResult;
 
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
@@ -103,7 +103,7 @@ import org.w3c.dom.Document;
  */
 
 
-public class ConsciousSimulationApp extends Application {
+public class RegulationSimulationApp extends Application {
 
     private final SimulationParameters params = new SimulationParameters();
 
@@ -147,7 +147,7 @@ public class ConsciousSimulationApp extends Application {
 
     @Override
     public void start(Stage stage) {
-        System.out.println("🔥 RUNNING ConsciousSimulationApp — PUB/EXP MODE ENABLED");
+        System.out.println("🔥 RUNNING RegulationSimulationApp — PUB/EXP MODE ENABLED");
 
         BorderPane root = new BorderPane();
         root.setLeft(controls(stage));
@@ -166,7 +166,7 @@ public class ConsciousSimulationApp extends Application {
         //root.setCenter(scroller);
 
         Scene scene = new Scene(root, 1500, 950);
-        stage.setTitle("Quantum Consciousness Simulator");
+        stage.setTitle("Quantum Regulation Simulator");
         stage.setScene(scene);
         stage.show();
     }
@@ -215,8 +215,8 @@ public class ConsciousSimulationApp extends Application {
         noiseRow.setAlignment(Pos.CENTER_LEFT);
 
         // Ordering selector
-        ComboBox<QuantumConsciousAgent.ControlOrdering> ordering = new ComboBox<>();
-        ordering.getItems().addAll(QuantumConsciousAgent.ControlOrdering.values());
+        ComboBox<QuantumRegulationAgent.ControlOrdering> ordering = new ComboBox<>();
+        ordering.getItems().addAll(QuantumRegulationAgent.ControlOrdering.values());
         ordering.setValue(params.ordering);
         ordering.setOnAction(e -> params.ordering = ordering.getValue());
 
@@ -264,7 +264,7 @@ public class ConsciousSimulationApp extends Application {
 
         Button run = new Button("Run single");
         run.setOnAction(e -> {
-            last = ConsciousSimulation.run(params);
+            last = RegulationSimulation.run(params);
 
             plotMean(entropyChart,   last.time, last.entropy,   "SvN");
             plotMean(coherenceChart, last.time, last.coherence, "ΔC");
@@ -278,7 +278,7 @@ public class ConsciousSimulationApp extends Application {
 
             Task<AveragedResult> task = new Task<>() {
                 @Override protected AveragedResult call() {
-                    return ConsciousSimulation.runAveraged(params, 30, 200);
+                    return RegulationSimulation.runAveraged(params, 30, 200);
                 }
             };
 
@@ -480,7 +480,7 @@ public class ConsciousSimulationApp extends Application {
                                 j,                  // noise index
                                 r                  // run index
                             );
-                            SimulationResult rs = ConsciousSimulation.run(p);
+                            SimulationResult rs = RegulationSimulation.run(p);
 
                             sum += rs.coherence.stream()
                                 .mapToDouble(Double::doubleValue)
@@ -704,7 +704,7 @@ public class ConsciousSimulationApp extends Application {
         });
 
         StackPane dmuPane = new StackPane(dmuChart);
-        Label annotation = regulationAnnotation();
+        Label annotation = mindfulnessAnnotation();
         StackPane.setAlignment(annotation, Pos.TOP_RIGHT);
         StackPane.setMargin(annotation, new Insets(10));
         dmuPane.getChildren().add(annotation);
@@ -844,7 +844,7 @@ public class ConsciousSimulationApp extends Application {
         return zero;
     }
 
-    private Label regulationAnnotation() {
+    private Label mindfulnessAnnotation() {
         Label note = new Label(
             "Δμ < 0 : adaptive down-regulation\n" +
             "Δμ = 0 : neutral regulation\n" +

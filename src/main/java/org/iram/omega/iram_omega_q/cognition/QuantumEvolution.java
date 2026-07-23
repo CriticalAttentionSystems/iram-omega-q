@@ -37,7 +37,7 @@ public final class QuantumEvolution {
      *
      * This method retains the original public API. For repeated evolution
      * under a fixed H and dt, construct a {@link Propagator} once and reuse
-     * it, as QuantumConsciousAgent now does.
+     * it, as QuantumRegulationAgent now does.
      *
      * @param psi quantum-like cognitive state to evolve in place
      * @param H Hamiltonian generating coherent evolution

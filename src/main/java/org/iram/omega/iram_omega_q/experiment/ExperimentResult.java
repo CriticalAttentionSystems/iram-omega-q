@@ -43,7 +43,7 @@ public class ExperimentResult {
         System.out.println("SvN        = " + last.SvN);
         System.out.println("Sdiag      = " + last.Sdiag);
         System.out.println("Coherence  = " + last.coherence);
-        System.out.println("Regulation μ = " + last.mu);
+        System.out.println("Mindfulness μ = " + last.mu);
     }
 
     public List<Row> rows() {

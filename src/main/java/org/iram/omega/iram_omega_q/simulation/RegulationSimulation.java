@@ -9,9 +9,14 @@ import java.util.List;
 import java.util.function.ToDoubleFunction;
 import org.iram.omega.iram_omega_q.cognition.Hamiltonian;
 import org.iram.omega.iram_omega_q.cognition.QuantumCognitiveState;
-import org.iram.omega.iram_omega_q.cognition.QuantumConsciousAgent;
+import org.iram.omega.iram_omega_q.cognition.QuantumRegulationAgent;
 import org.iram.omega.iram_omega_q.cognition.quantum.CognitiveStateMetrics;
 import org.iram.omega.iram_omega_q.control.MuController;
+import org.iram.omega.iram_omega_q.noise.CompositeNoiseModel;
+import org.iram.omega.iram_omega_q.noise.ExternalNoiseModel;
+import org.iram.omega.iram_omega_q.noise.InducedNoiseModel;
+import org.iram.omega.iram_omega_q.noise.NoiseModel;
+import org.iram.omega.iram_omega_q.noise.SelfGeneratedNoiseModel;
 
 /**
  * Central simulation driver for IRAM-Ω-Q.
@@ -19,10 +24,10 @@ import org.iram.omega.iram_omega_q.control.MuController;
  * From the main app / GUI point of view, this class is the main computational
  * engine. The app prepares a SimulationParameters object, then calls one of:
  *
- *     ConsciousSimulation.run(p)
- *     ConsciousSimulation.run(p, mode)
- *     ConsciousSimulation.runAveraged(p, runs, burnInSamples)
- *     ConsciousSimulation.runSweepMeanCoherence(p, burnInSteps)
+ *     RegulationSimulation.run(p)
+ *     RegulationSimulation.run(p, mode)
+ *     RegulationSimulation.runAveraged(p, runs, burnInSamples)
+ *     RegulationSimulation.runSweepMeanCoherence(p, burnInSteps)
  *
  * The workflow is:
  *
@@ -30,7 +35,7 @@ import org.iram.omega.iram_omega_q.control.MuController;
  * 2. This class builds the initial quantum-like cognitive state.
  * 3. This class builds the Hamiltonian dynamics.
  * 4. This class builds the adaptive μ controller.
- * 5. These components are assembled into a QuantumConsciousAgent.
+ * 5. These components are assembled into a QuantumRegulationAgent.
  * 6. The simulation loop advances the agent step by step.
  * 7. At each sampled time step, entropy, coherence gap, μ, Δμ,
  *    target entropy, effective noise, intervention flags, and reset flags
@@ -42,7 +47,7 @@ import org.iram.omega.iram_omega_q.control.MuController;
  *
  * @author veronique
  */
-public class ConsciousSimulation {
+public class RegulationSimulation {
 
     /**
      * Model-side run mode.
@@ -170,14 +175,14 @@ public class ConsciousSimulation {
          * 5. Assemble the agent.
          * ------------------------------------------------------------------
          *
-         * The QuantumConsciousAgent owns the evolving state, Hamiltonian,
+         * The QuantumRegulationAgent owns the evolving state, Hamiltonian,
          * controller, and random number generator.
          *
          * From this point forward, the simulation loop interacts mostly with
          * the agent.
          */
-        QuantumConsciousAgent agent =
-                new QuantumConsciousAgent(psi, H, muController, rng);
+        QuantumRegulationAgent agent =
+                new QuantumRegulationAgent(psi, H, muController, rng);
 
         /*
          * ------------------------------------------------------------------
@@ -191,7 +196,7 @@ public class ConsciousSimulation {
          *     Baseline noise amplitude. This may later be multiplied during
          *     intervention windows.
          *
-         * regulationFocus:
+         * mindfulnessFocus:
          *     Configured attentional focus index used by the stabilization operator.
          *
          * controlOrdering:
@@ -200,8 +205,17 @@ public class ConsciousSimulation {
          */
         agent.setDt(p.dt);
         agent.setEmotionalNoise(p.emotionalNoise);
-        agent.setRegulationFocus(p.focusIndex);
+        agent.setMindfulnessFocus(p.focusIndex);
         agent.setControlOrdering(p.ordering);
+        agent.setNoiseModel(buildNoiseModel(p));
+        agent.resetNoiseModel(p.seed + p.noiseSeedOffset);
+
+        /*
+         * q(t) schedule for fixed, periodic, or Markov switching.  The
+         * schedule changes which already-defined step branch is active; it
+         * does not alter the RF or DF update logic in the agent.
+         */
+        final OrderingSchedule orderingSchedule = new OrderingSchedule(p);
         
         /*
          * This is currently not used later in the method, but it documents the
@@ -279,7 +293,7 @@ public class ConsciousSimulation {
         /*
          * muPrev is used to compute Δμ between recorded samples.
          */
-        double muPrev = agent.regulationLevel();
+        double muPrev = agent.mindfulnessLevel();
 
         /*
          * ------------------------------------------------------------------
@@ -418,12 +432,24 @@ public class ConsciousSimulation {
                  * Reset muPrev so that the next Δμ does not contain an
                  * artificial jump caused only by the reset.
                  */
-                muPrev = agent.regulationLevel();
+                muPrev = agent.mindfulnessLevel();
             }
 
             /*
              * --------------------------------------------------------------
-             * 9e. Advance the agent by one time step.
+             * 9e. Select the ordering q(t) for this step.
+             * --------------------------------------------------------------
+             * FIXED exactly reproduces previous RF or DF runs.  PERIODIC and
+             * MARKOV allow temporary loss and return of anticipatory control.
+             */
+            QuantumRegulationAgent.ControlOrdering orderingNow =
+                    orderingSchedule.orderingAtStep(t);
+            agent.setControlOrdering(orderingNow);
+            boolean orderingSwitchedNow = orderingSchedule.switchedAtLastStep();
+
+            /*
+             * --------------------------------------------------------------
+             * 9f. Advance the agent by one time step.
              * --------------------------------------------------------------
              *
              * This is where the actual model update happens. Internally, the
@@ -446,7 +472,7 @@ public class ConsciousSimulation {
                  * the first recorded Delta mu is not the entire discarded
                  * transient compressed into one sample.
                  */
-                muPrev = agent.regulationLevel();
+                muPrev = agent.mindfulnessLevel();
                 continue;
             }
 
@@ -489,7 +515,7 @@ public class ConsciousSimulation {
              * μ is the current adaptive regulation level.
              * Δμ is the change since the previous recorded sample.
              */
-            double muNow = agent.regulationLevel();
+            double muNow = agent.mindfulnessLevel();
 
             result.mu.add(muNow);
             result.deltaMu.add(muNow - muPrev);
@@ -540,9 +566,14 @@ public class ConsciousSimulation {
              *         otherwise 0.
              */
             result.targetEntropy.add(scheduledTarget);
+            result.rawNoise.add(agent.getLastRawNoise());
             result.effectiveNoise.add(agent.getLastEffectiveNoise());
+            result.deltaMuPreNoise.add(agent.getLastDeltaMuPreNoise());
+            result.deltaMuPostUpdate.add(agent.getLastDeltaMuPostUpdate());
             result.interventionFlag.add(intervention ? 1 : 0);
             result.resetFlag.add(resetNow ? 1 : 0);
+            result.orderingRF.add(orderingNow == QuantumRegulationAgent.ControlOrdering.REGULATION_FIRST ? 1 : 0);
+            result.orderingSwitchFlag.add(orderingSwitchedNow ? 1 : 0);
         }
 
         /*
@@ -733,7 +764,9 @@ public class ConsciousSimulation {
         public List<Double> coherence = new ArrayList<>();
         public List<Double> mu = new ArrayList<>();
         public List<Double> deltaMu = new ArrayList<>();
-
+        public List<Double> deltaMuPreNoise = new ArrayList<>();
+        public List<Double> deltaMuPostUpdate = new ArrayList<>();
+        
         /*
          * Lyapunov-style diagnostics.
          *
@@ -758,6 +791,15 @@ public class ConsciousSimulation {
         public List<Double> effectiveNoise = new ArrayList<>();
         public List<Integer> interventionFlag = new ArrayList<>();
         public List<Integer> resetFlag = new ArrayList<>();
+
+        /** 1 when q(t) is REGULATION_FIRST; 0 when q(t) is DISTURBANCE_FIRST. */
+        public List<Integer> orderingRF = new ArrayList<>();
+
+        /** 1 when q(t) differs from q(t-dt); 0 otherwise. */
+        public List<Integer> orderingSwitchFlag = new ArrayList<>();
+        
+        /** noise */
+        public List<Double> rawNoise = new ArrayList<>();
     }
 
     /* ==================== AVERAGING ==================== */
@@ -994,14 +1036,16 @@ public class ConsciousSimulation {
         Hamiltonian H = buildHamiltonian(p);
         MuController muController = buildMuController(p);
 
-        QuantumConsciousAgent agent =
-                new QuantumConsciousAgent(psi, H, muController, rng);
+        QuantumRegulationAgent agent =
+                new QuantumRegulationAgent(psi, H, muController, rng);
 
         agent.setDt(p.dt);
         agent.setEmotionalNoise(p.emotionalNoise);
-        agent.setRegulationFocus(p.focusIndex);
+        agent.setMindfulnessFocus(p.focusIndex);
         agent.setControlOrdering(p.ordering);
-
+        agent.setNoiseModel(buildNoiseModel(p));
+        agent.resetNoiseModel(p.seed + p.noiseSeedOffset);
+        
         double sum = 0.0;
         double sumSquares = 0.0;
         int n = 0;
@@ -1053,4 +1097,79 @@ public class ConsciousSimulation {
         double variance = Math.max(0.0, sumSquares / n - mean * mean);
         return new SweepStatistics(mean, variance);
     }
+    
+    /**
+    * Build the configured Paper 4 noise model.
+    *
+    * EXTERNAL preserves Papers 1--3 behavior.
+    */
+   private static NoiseModel buildNoiseModel(SimulationParameters p) {
+
+       long noiseSeed = p.seed + p.noiseSeedOffset;
+
+       switch (p.noiseModelType) {
+
+           case EXTERNAL:
+               return new ExternalNoiseModel();
+
+           case SELF_GENERATED:
+               return new SelfGeneratedNoiseModel(
+                       p.selfNoiseRho,
+                       p.selfNoiseSigma,
+                       noiseSeed
+               );
+
+           case INDUCED:
+               return new InducedNoiseModel(
+                       p.inducedNoiseAlpha
+               );
+
+           case EXTERNAL_PLUS_SELF:
+               return new CompositeNoiseModel(
+                       new ExternalNoiseModel(),
+                       new SelfGeneratedNoiseModel(
+                               p.selfNoiseRho,
+                               p.selfNoiseSigma,
+                               noiseSeed
+                       )
+               );
+
+           case EXTERNAL_PLUS_INDUCED:
+               return new CompositeNoiseModel(
+                       new ExternalNoiseModel(),
+                       new InducedNoiseModel(
+                               p.inducedNoiseAlpha
+                       )
+               );
+
+           case SELF_PLUS_INDUCED:
+               return new CompositeNoiseModel(
+                       new SelfGeneratedNoiseModel(
+                               p.selfNoiseRho,
+                               p.selfNoiseSigma,
+                               noiseSeed
+                       ),
+                       new InducedNoiseModel(
+                               p.inducedNoiseAlpha
+                       )
+               );
+
+           case MIXED:
+               return new CompositeNoiseModel(
+                       new ExternalNoiseModel(),
+                       new SelfGeneratedNoiseModel(
+                               p.selfNoiseRho,
+                               p.selfNoiseSigma,
+                               noiseSeed
+                       ),
+                       new InducedNoiseModel(
+                               p.inducedNoiseAlpha
+                       )
+               );
+
+           default:
+               throw new IllegalArgumentException(
+                       "Unsupported noiseModelType: " + p.noiseModelType);
+       }
+   }
 }

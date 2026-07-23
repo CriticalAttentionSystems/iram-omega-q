@@ -1,0 +1,6 @@
+scan,mu,noise,targetEntropy,config_path,output_dir
+target,0.05,0.17,0.2,/Users/veronique/BASE/Code/Repo/iram-omega-q/analysis/paper3/config/robustness/target/target_S0p200.properties,/Users/veronique/BASE/Code/Repo/iram-omega-q/analysis/results/paper3/robustness/target_runs/target_S0p200
+target,0.05,0.17,0.25,/Users/veronique/BASE/Code/Repo/iram-omega-q/analysis/paper3/config/robustness/target/target_S0p250.properties,/Users/veronique/BASE/Code/Repo/iram-omega-q/analysis/results/paper3/robustness/target_runs/target_S0p250
+target,0.05,0.17,0.3,/Users/veronique/BASE/Code/Repo/iram-omega-q/analysis/paper3/config/robustness/target/target_S0p300.properties,/Users/veronique/BASE/Code/Repo/iram-omega-q/analysis/results/paper3/robustness/target_runs/target_S0p300
+target,0.05,0.17,0.35,/Users/veronique/BASE/Code/Repo/iram-omega-q/analysis/paper3/config/robustness/target/target_S0p350.properties,/Users/veronique/BASE/Code/Repo/iram-omega-q/analysis/results/paper3/robustness/target_runs/target_S0p350
+target,0.05,0.17,0.4,/Users/veronique/BASE/Code/Repo/iram-omega-q/analysis/paper3/config/robustness/target/target_S0p400.properties,/Users/veronique/BASE/Code/Repo/iram-omega-q/analysis/results/paper3/robustness/target_runs/target_S0p400
